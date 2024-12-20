@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -9,10 +10,10 @@ import (
 
 func init() {
 	rootCmd.AddCommand(add)
-	rootCmd.AddCommand(open)
 	rootCmd.AddCommand(write)
 	rootCmd.AddCommand(del)
 	rootCmd.AddCommand(copy)
+	rootCmd.AddCommand(edit)
 
 	copy.Flags().BoolP("append", "a", false, "appends into the file instead of truncating the file")
 }
@@ -131,24 +132,22 @@ var add = &cobra.Command{
 	},
 }
 
-var open = &cobra.Command{
-	Use:   "search",
-	Short: "search a file",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			fmt.Println("Please enter a file name")
-			return
-		}
-		file, err := os.Open(args[0])
-		if err != nil {
-			fmt.Println("Error in the filepath: ", err)
-			return
-		}
-		data, err := io.ReadAll(file)
-		if err != nil {
-			fmt.Println("Error reading the file: ", err)
-			return
-		}
-		fmt.Println(string(data))
-	},
+var edit = &cobra.Command{
+	Use:   "edit",
+	Short: "opens editor with file name",
+	Run:   runner,
+}
+
+func runner(cmd *cobra.Command, args []string) {
+	app := tview.NewApplication()
+	var err error
+	var blob = InitBlob(args[0])
+	var ed = InitDisplay(app, blob)
+	ed.Render()
+	err = app.SetRoot(ed.layout, true).Run()
+	if err != nil {
+		fmt.Println("Error setting root app:", err)
+		return
+	}
+
 }
